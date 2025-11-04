@@ -39,44 +39,47 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    appId: '1:XXXXXXXXXXXX:web:XXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    messagingSenderId: 'XXXXXXXXXXXX',
-    projectId: 'your-project-id',
-    authDomain: 'your-project-id.firebaseapp.com',
-    storageBucket: 'your-project-id.appspot.com',
-    measurementId: 'G-XXXXXXXXXX',
+    apiKey: 'AIzaSyCyyJP9-Ca2fseZHzun-tiz36Bh-ZGxwic',
+    appId: '1:1084925483913:web:7c0f3831a9e3dc717b9f58',
+    messagingSenderId: '1084925483913',
+    projectId: 'btap-attendance',
+    authDomain: 'btap-attendance.firebaseapp.com',
+    storageBucket: 'btap-attendance.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    appId: '1:XXXXXXXXXXXX:android:XXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    messagingSenderId: 'XXXXXXXXXXXX',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyBSMe86e1eWXbe5KGrzBQhAS-0P84Qlr2c',
+    appId: '1:1084925483913:android:8e4662e0922aaccd7b9f58',
+    messagingSenderId: '1084925483913',
+    projectId: 'btap-attendance',
+    storageBucket: 'btap-attendance.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    appId: '1:XXXXXXXXXXXX:ios:XXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    messagingSenderId: 'XXXXXXXXXXXX',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyDzdzfVdnTNDuU7JiAscijH_E1Jf6xCFR4',
+    appId: '1:1084925483913:ios:382c498887822ceb7b9f58',
+    messagingSenderId: '1084925483913',
+    projectId: 'btap-attendance',
+    storageBucket: 'btap-attendance.firebasestorage.app',
+    iosBundleId: 'com.example.attBlue',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    appId: '1:XXXXXXXXXXXX:macos:XXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    messagingSenderId: 'XXXXXXXXXXXX',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyDzdzfVdnTNDuU7JiAscijH_E1Jf6xCFR4',
+    appId: '1:1084925483913:ios:c061c67d2d930ff37b9f58',
+    messagingSenderId: '1084925483913',
+    projectId: 'btap-attendance',
+    storageBucket: 'btap-attendance.firebasestorage.app',
+    iosBundleId: 'com.attendance.attBlue',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    appId: '1:XXXXXXXXXXXX:windows:XXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-    messagingSenderId: 'XXXXXXXXXXXX',
-    projectId: 'your-project-id',
-    storageBucket: 'your-project-id.appspot.com',
+    apiKey: 'AIzaSyCyyJP9-Ca2fseZHzun-tiz36Bh-ZGxwic',
+    appId: '1:1084925483913:web:1229eedc9cc53d0e7b9f58',
+    messagingSenderId: '1084925483913',
+    projectId: 'btap-attendance',
+    authDomain: 'btap-attendance.firebaseapp.com',
+    storageBucket: 'btap-attendance.firebasestorage.app',
   );
+
 }

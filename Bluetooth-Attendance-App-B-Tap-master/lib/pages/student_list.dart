@@ -1,10 +1,11 @@
 // ignore_for_file: avoid_function_literals_in_foreach_calls, prefer_typing_uninitialized_variables, unused_field
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:csv/csv.dart';
+import 'package:file_saver/file_saver.dart';
 // import 'package:path_provider/path_provider.dart';
 
 class StudentList extends StatefulWidget {
@@ -49,22 +50,22 @@ class _StudentListState extends State<StudentList> {
       child: Column(
         children: [
           StreamBuilder<QuerySnapshot>(
-              stream: currentDateStream,
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
+              stream: FirebaseFirestore.instance.collection("Attendance").snapshots(),
+              builder: (context, attendanceSnapshot) {
+                if (attendanceSnapshot.hasError) {
                   return const Text("Error");
                 }
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (attendanceSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasData) {
-                  List<dynamic> email = [];
+                if (attendanceSnapshot.hasData) {
+                  List<dynamic> presentEmails = [];
 
-                  snapshot.data!.docs.forEach((element) {
-                    if (element.id == "$semester Slot $slot") {
+                  attendanceSnapshot.data!.docs.forEach((element) {
+                    if (element.id == "${date}_${semester}_${subject}_${slot}") {
                       Map<String, dynamic> data =
                           element.data()! as Map<String, dynamic>;
-                      email = data[subject] as List<dynamic>;
+                      presentEmails = data["present"] as List<dynamic>? ?? [];
                     }
                   });
 
@@ -81,17 +82,14 @@ class _StudentListState extends State<StudentList> {
                         user = [];
                         int presentCount = 0;
                         snapshot.data!.docs.forEach((element) {
-                          // print(element.data());
                           if (element.id == "$semester Slot $slot") {
-                            // print(element.data());
                             Map<String, dynamic> userLocal =
                                 element.data() as Map<String, dynamic>;
 
-                            // print(userLocal["Students"]);
                             for (var i = 0;
                                 i < userLocal["Students"].length;
                                 i++) {
-                              if (email.contains(
+                              if (presentEmails.contains(
                                   userLocal["Students"][i]["Email"])) {
                                 userLocal["Students"][i]["Status"] = "Present";
                                 presentCount++;
@@ -100,25 +98,16 @@ class _StudentListState extends State<StudentList> {
                               }
                               user.add(userLocal["Students"][i]);
                             }
-                            print("here!!!");
-                            print(user);
                           }
                         });
-                        // print(user);
                         return Column(
                           children: [
-                            // const SizedBox(height: 30),
-                            // const Text(
-                            //   "Present Students: ",
-                            //   style: TextStyle(fontSize: 20),
-                            //   textAlign: TextAlign.center,
-                            // ),
-                            // const SizedBox(height: 30),
-                            // Text(
-                            //     "${presentCount}/${user.length} students are present"),
-                            // const SizedBox(height: 10),
+                            const SizedBox(height: 10),
+                            Text(
+                                "Present: $presentCount/${user.length} students"),
+                            const SizedBox(height: 10),
                             SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.8,
+                              height: MediaQuery.of(context).size.height * 0.7,
                               child: Padding(
                                 padding: const EdgeInsets.all(7.0),
                                 child: ListView.separated(
@@ -137,9 +126,8 @@ class _StudentListState extends State<StudentList> {
                                                       185,
                                                       5,
                                                       5,
-                                                      0.8), // Color of the left border
-                                              width:
-                                                  8.0, // Width of the left border
+                                                      0.8),
+                                              width: 8.0,
                                             ),
                                           ),
                                         ),
@@ -147,6 +135,7 @@ class _StudentListState extends State<StudentList> {
                                           title: Text(
                                               user[index]['Register number']),
                                           subtitle: Text(user[index]['Name']),
+                                          trailing: Text(user[index]['Status']),
                                         ));
                                   },
                                   separatorBuilder:
@@ -158,27 +147,17 @@ class _StudentListState extends State<StudentList> {
                                 ),
                               ),
                             ),
-                            SizedBox(
+                                SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.9,
                                 height: 48,
                                 child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.deepPurple,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                  ),
                                   onPressed: () async {
                                     generateCSV();
                                   },
-                                  child: const Text('Export CSV',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                      )),
+                                  child: const Text('Export CSV'),
                                 ))
                           ],
                         );
-                        // return const Text("Data is There");
                       }
 
                       return const Text("No Data");
@@ -202,17 +181,6 @@ class _StudentListState extends State<StudentList> {
   }
 
   Future<void> generateCSV() async {
-    // try {
-    //   var status = await Permission.manageExternalStorage.request();
-    //   if (status.isDenied) {
-    //     print("PERMISSION ERROR!!!!");
-    //     return;
-    //   }
-    // } catch (e) {
-    //   print("HERE!!");
-    //   print(e);
-    // }
-
     List<String> rowHeader = ["Register Number", "Name", "Present/Absent"];
     List<List<dynamic>> rows = [];
     rows.add(rowHeader);
@@ -226,18 +194,19 @@ class _StudentListState extends State<StudentList> {
 
     try {
       String csv = const ListToCsvConverter().convert(rows);
-      // final directory = await getExternalStorageDirectory();
-      // final String filePath = '${directory?.path}/my_data.csv';
-      final String filePath =
-          '/storage/emulated/0/Download/${date}_${semester}_${subject}_Slot-${slot}.csv';
-      final File file = File(filePath);
-      await file.writeAsString(csv);
-      print('CSV file saved to $filePath');
-      await _showSnackBar('CSV file saved to Downloads folder');
+      final String fileName = '${date}_${semester}_${subject}_Slot-${slot}.csv';
+      await FileSaver.instance.saveFile(
+        name: fileName,
+        bytes: Uint8List.fromList(csv.codeUnits),
+        ext: 'csv',
+        mimeType: MimeType.csv,
+      );
+      print('CSV file saved as $fileName');
+      await _showSnackBar('CSV file downloaded successfully');
     } catch (e) {
       print("Error creating file!");
       print(e);
-      _showSnackBar(e.toString());
+      _showSnackBar('Error downloading CSV: $e');
     }
   }
 

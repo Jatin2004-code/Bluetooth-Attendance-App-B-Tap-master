@@ -8,8 +8,21 @@ import 'package:att_blue/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'firebase_options.dart';
+
+void testFirestoreConnection() async {
+  try {
+    await FirebaseFirestore.instance.collection('test').add({
+      'connect': true,
+      'timestamp': DateTime.now(),
+    });
+    print('Firestore Connected! Document Added');
+  } catch (e) {
+    print('Firestore Connection Error: $e');
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +46,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    testFirestoreConnection();
     if (user != null) {
       isStudent = user!.email!.endsWith('student.tce.edu');
     }
@@ -42,7 +56,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.deepPurple),
+      theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/',
       // home: user != null ? Register() : Login(),
       routes: {

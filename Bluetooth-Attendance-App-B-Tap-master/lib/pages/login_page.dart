@@ -28,13 +28,8 @@ class _LoginState extends State<Login> {
           controller: controller,
           obscureText: title == 'Password' ? true : false,
           decoration: InputDecoration(
-            hintText: title,
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-              borderSide: BorderSide.none,
-            ),
+            labelText: title,
+            border: const OutlineInputBorder(),
           ),
         ));
   }
@@ -53,7 +48,13 @@ class _LoginState extends State<Login> {
   }
 
   Widget _errorMessage() {
-    return Text(errorMsg == '' ? '' : 'Humm ? $errorMsg');
+    return errorMsg == '' ? const SizedBox() : Card(
+      color: Colors.red.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(errorMsg!, style: const TextStyle(color: Colors.red)),
+      ),
+    );
   }
 
   Widget _loginBtn() {
@@ -97,50 +98,53 @@ class _LoginState extends State<Login> {
                 });
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-            ),
-            child: const Text('Login', style: TextStyle(color: Colors.white))));
+            child: const Text('Login')));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        height: double.infinity,
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Welcome back!',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            _entryField('Email', _emailCtrl),
-            _entryField('Password', _passwordCtrl),
-            _errorMessage(),
-            _loginBtn(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      appBar: AppBar(
+        title: const Text('Login'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text('Create an account?'),
-                TextButton(
-                  onPressed: () {
-                    Get.offNamed('/register');
-                  },
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(color: Colors.deepPurple),
-                  ),
+                Text(
+                  'Welcome back!',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 20),
+                _entryField('Email', _emailCtrl),
+                const SizedBox(height: 10),
+                _entryField('Password', _passwordCtrl),
+                const SizedBox(height: 10),
+                _errorMessage(),
+                const SizedBox(height: 20),
+                _loginBtn(),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Create an account?'),
+                    TextButton(
+                      onPressed: () {
+                        Get.offNamed('/register');
+                      },
+                      child: const Text('Register'),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

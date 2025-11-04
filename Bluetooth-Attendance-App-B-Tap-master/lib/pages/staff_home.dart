@@ -40,42 +40,34 @@ class _StaffHomePage extends State<StaffHomePage> {
   // List of items in our dropdown menu
   var semester = [
     "Select an Option",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
   ];
   var subject = [
     "Select an Option",
+    "OOPS",
+    "DBMS",
+    "CN",
+    "OS"
   ];
-  var slot = ["Select an Option"];
+  var slot = [
+    "Select an Option",
+    "A",
+    "B",
+    "C",
+    "D"
+  ];
 
   bool isAdvertising = false;
-  var semesters;
-  var subjects;
-  var slots;
-  var subjectsHandling;
 
   @override
   void initState() {
     super.initState();
     dateController.text = "";
-    // print(currEmail);
-    //Fetch the current user details from firebaseauth.instance from Faculty Collection
-    FirebaseFirestore.instance
-        .collection("Faculty")
-        .where("Email", isEqualTo: currEmail)
-        .get()
-        .then((value) {
-      for (var element in value.docs) {
-        //Get the subjects handled by the faculty
-        subjectsHandling = element.data()['SubjectsHandling'];
-        //Get the keys of the subjects handled by the faculty
-        setState(() {
-          semesters = subjectsHandling.keys;
-        });
-
-        semester.addAll(semesters);
-        semester.sort();
-        // print(semester);
-      }
-    });
   }
 
   Widget _takeAttendance() {
@@ -87,79 +79,55 @@ class _StaffHomePage extends State<StaffHomePage> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      )),
-                  child: const Text('Take Attendance',
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text('Take Attendance'),
                   onPressed: () async {
                     if (!isToday) {
                       return;
                     }
-                    // if (!await Nearby().askLocationPermission()) {
-                    //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    //       content:
-                    //           Text("Location permissions not granted :(")));
-                    // }
-
-                    // if (!await Nearby().enableLocationServices()) {
-                    //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    //       content:
-                    //           Text("Enabling Location Service Failed :(")));
-                    // }
-
-                    if (!await Nearby().checkBluetoothPermission()) {
-                      Nearby().askBluetoothPermission();
-                      // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      //     content: Text("Bluetooth permissions not granted :(")));
-                    }
-
-                    while (!await Permission.bluetooth.isGranted ||
-                        !await Permission.bluetoothAdvertise.isGranted ||
-                        !await Permission.bluetoothConnect.isGranted ||
-                        !await Permission.bluetoothScan.isGranted) {
-                      [
-                        Permission.bluetooth,
-                        Permission.bluetoothAdvertise,
-                        Permission.bluetoothConnect,
-                        Permission.bluetoothScan
-                      ].request();
-                    }
-
                     if (semesterChoosen != "Select an Option" &&
                         subjectChoosen != "Select an Option" &&
-                        slotChoosen != "Select an Option") {
+                        slotChoosen != "Select an Option" &&
+                        dateController.text.isNotEmpty) {
                       try {
-                        userName =
-                            "TCE_Faculty $semesterChoosen $subjectChoosen $slotChoosen";
-                        bool a = await Nearby().startAdvertising(
-                          userName,
+                        String docId = "${dateController.text}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+                        await FirebaseFirestore.instance.collection("Attendance").doc(docId).set({
+                          "semester": semesterChoosen,
+                          "subject": subjectChoosen,
+                          "batch": slotChoosen,
+                          "date": dateController.text,
+                          "present": [],
+                          "attendanceStarted": true
+                        });
+                        // Start advertising for Bluetooth connections
+                        String serviceId = "${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+                        await Nearby().startAdvertising(
+                          currEmail,
                           strategy,
+                          serviceId: serviceId,
                           onConnectionInitiated: onConnectionInit,
                           onConnectionResult: (id, status) {
-                            showSnackbar(status);
+                            if (status == Status.CONNECTED) {
+                              showSnackbar("Student connected: $id");
+                            } else {
+                              showSnackbar("Connection failed: $id");
+                            }
                           },
                           onDisconnected: (id) {
-                            showSnackbar(
-                                "Disconnected: ${endpointMap[id]!.endpointName}, id $id");
+                            showSnackbar("Student disconnected: $id");
                             setState(() {
                               endpointMap.remove(id);
                             });
                           },
                         );
-                        showSnackbar("ADVERTISING: $a");
-
+                        showSnackbar("Attendance started and advertising via Bluetooth");
                         setState(() {
                           isAdvertising = true;
                         });
                       } catch (exception) {
-                        showSnackbar(exception);
+                        showSnackbar("Error saving attendance: $exception");
                       }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("Please Select All Fields")));
+                      showSnackbar("Please select all fields");
                     }
                   }),
             )
@@ -167,26 +135,15 @@ class _StaffHomePage extends State<StaffHomePage> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[900],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
                   onPressed: () async {
-                    try {
-                      await Nearby().stopAdvertising();
-                      showSnackbar("Stopped Advertising");
-
-                      setState(() {
-                        isAdvertising = false;
-                      });
-                    } catch (exception) {
-                      showSnackbar(exception);
-                    }
+                  // Stop advertising
+                  Nearby().stopAdvertising();
+                  setState(() {
+                    isAdvertising = false;
+                  });
+                  showSnackbar("Attendance stopped");
                   },
-                  child: const Text('Stop Attendance',
-                      style: TextStyle(color: Colors.white))),
+                  child: const Text('Stop Attendance')),
             );
     } else {
       return Container();
@@ -198,33 +155,32 @@ class _StaffHomePage extends State<StaffHomePage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.deepPurple,
-        title: const Text("TCE Faculty", style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text("TCE Faculty"),
         actions: [
           GestureDetector(
               child: const CircleAvatar(
-                backgroundColor: Colors.white,
                 radius: 20.0,
-                child: Icon(Icons.logout_sharp, color: Colors.deepPurple),
+                child: Icon(Icons.logout_sharp),
               ),
               onTap: () async {
-                await Nearby().stopAdvertising();
                 await FirebaseAuth.instance.signOut();
                 Get.offNamed('/login');
               }),
         ],
       ),
-      body: Container(
-        // height: MediaQuery.of(context).size.height * 0.45,
-        height: double.infinity,
-        margin: EdgeInsets.all(MediaQuery.of(context).size.height * 0.01),
-        padding: EdgeInsets.symmetric(
-            horizontal: MediaQuery.of(context).size.height * 0.05),
-        alignment: Alignment.center,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
             //Select Semester
             Container(
               margin: EdgeInsets.symmetric(
@@ -248,15 +204,7 @@ class _StaffHomePage extends State<StaffHomePage> {
                       }).toList(),
                       onChanged: (String? newValue) {
                         setState(() {
-                          slotChoosen = "Select an Option";
-                          subjectChoosen = "Select an Option";
                           semesterChoosen = newValue!;
-                          if (semesterChoosen != 'Select an Option') {
-                            subjects = subjectsHandling[semesterChoosen].keys;
-                            print(subjects);
-                            subject.removeRange(1, subject.length);
-                            subject.addAll(subjects);
-                          }
                         });
                       },
                     ),
@@ -285,31 +233,21 @@ class _StaffHomePage extends State<StaffHomePage> {
                     // After selecting the desired option,it will change button value to selected value
                     onChanged: (String? newValue) {
                       setState(() {
-                        slotChoosen = "Select an Option";
                         subjectChoosen = newValue!;
-                        if (semesterChoosen != 'Select an Option' &&
-                            subjectChoosen != 'Select an Option') {
-                          slots =
-                              subjectsHandling[semesterChoosen][subjectChoosen];
-                          print(slots);
-
-                          slot.removeRange(1, slot.length);
-                          slot.addAll(List<String>.from(slots));
-                        }
                       });
                     },
                   ),
                 ],
               ),
             ),
-            //Select Slot
+            //Select Batch
             Container(
               margin: EdgeInsets.symmetric(
                   vertical: MediaQuery.of(context).size.height * 0.02,
                   horizontal: MediaQuery.of(context).size.height * 0.01),
               child: Row(
                 children: [
-                  const Text('Choose Slot', style: TextStyle(fontSize: 13)),
+                  const Text('Choose Batch', style: TextStyle(fontSize: 13)),
                   DropdownButton(
                     value: slotChoosen, // Initial Value
                     icon: const Icon(
@@ -324,7 +262,6 @@ class _StaffHomePage extends State<StaffHomePage> {
                     onChanged: (String? newValue) {
                       setState(() {
                         slotChoosen = newValue!;
-                        print(slotChoosen);
                       });
                     },
                   ),
@@ -374,13 +311,6 @@ class _StaffHomePage extends State<StaffHomePage> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      side: const BorderSide(color: Colors.deepPurple),
-                    ),
-                  ),
                   onPressed: () {
                     // print("$semesterChoosen $subjectChoosen ${dateController.text}");
 
@@ -399,10 +329,11 @@ class _StaffHomePage extends State<StaffHomePage> {
                       "slot": slotChoosen
                     });
                   },
-                  child: const Text("Student List",
-                      style: TextStyle(color: Colors.deepPurple))),
+                  child: const Text("Student List")),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -436,7 +367,30 @@ class _StaffHomePage extends State<StaffHomePage> {
                   });
                   Nearby().acceptConnection(
                     id,
-                    onPayLoadRecieved: (endid, payload) async {},
+                    onPayLoadRecieved: (endid, payload) async {
+                      if (payload.type == PayloadType.BYTES) {
+                        String studentEmail = String.fromCharCodes(payload.bytes!);
+                        // Update attendance in Firestore
+                        DateTime now = DateTime.now();
+                        String formattedDate = '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
+                        String docId = "${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+                        await FirebaseFirestore.instance.collection("Attendance").doc(docId).update({
+                          "present": FieldValue.arrayUnion([studentEmail])
+                        });
+                        var db = FirebaseFirestore.instance.collection(formattedDate).doc("$semesterChoosen Slot $slotChoosen");
+                        var data = await db.get();
+                        if (!data.exists) {
+                          await db.set({
+                            '$subjectChoosen': FieldValue.arrayUnion([studentEmail]),
+                          });
+                        } else {
+                          await db.update({
+                            '$subjectChoosen': FieldValue.arrayUnion([studentEmail]),
+                          });
+                        }
+                        showSnackbar("Attendance recorded for $studentEmail");
+                      }
+                    },
                     onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
                   );
                 },

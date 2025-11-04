@@ -1,16 +1,12 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
-import 'dart:io';
-
-import 'package:att_blue/components/checkmark.dart';
-import 'package:att_blue/components/rippleEffect/ripple_animation.dart';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:nearby_connections/nearby_connections.dart';
 import 'package:get/get.dart';
+import 'package:nearby_connections/nearby_connections.dart';
 import 'package:permission_handler/permission_handler.dart';
-// import 'package:flutter/animations.dart'
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -24,14 +20,58 @@ class _StudentHomePageState extends State<StudentHomePage> {
   User? user = FirebaseAuth.instance.currentUser;
   late final String currEmail = user?.email.toString() ?? "null";
 
+  String semesterChoosen = "Select an Option";
+  String subjectChoosen = "Select an Option";
+  String slotChoosen = "Select an Option";
+
   final Strategy strategy = Strategy.P2P_STAR;
   Map<String, ConnectionInfo> endpointMap = {};
+
+  // List of items in our dropdown menu
+  var semester = [
+    "Select an Option",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6"
+  ];
+  var subject = [
+    "Select an Option",
+    "OOPS",
+    "DBMS",
+    "CN",
+    "OS"
+  ];
+  var slot = [
+    "Select an Option",
+    "A",
+    "B",
+    "C",
+    "D"
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
+
+  void _requestPermissions() async {
+    await [
+      Permission.location,
+      Permission.bluetooth,
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.bluetoothAdvertise,
+    ].request();
+  }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        await Nearby().stopDiscovery();
         setState(() {
           flag = 0;
         });
@@ -39,253 +79,326 @@ class _StudentHomePageState extends State<StudentHomePage> {
         return true;
       },
       child: Scaffold(
-          appBar: AppBar(
-            title: const Text("Student HomePage",
-                style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.deepPurple,
-            actions: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.white,
-                child: GestureDetector(
-                  onTap: () async {
-                    await Nearby().stopDiscovery();
-                    await FirebaseAuth.instance.signOut();
-                    Get.offNamed('/login');
-                  },
-                  child:
-                      const Icon(Icons.logout_sharp, color: Colors.deepPurple),
-                ),
-              )
-            ],
-          ),
-          body: Center(
+        appBar: AppBar(
+          title: const Text("Student HomePage"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Get.offNamed('/login');
+              },
+            )
+          ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                if (flag == 0)
-                  GestureDetector(
-                    onTap: endPointFoundHandler,
-                    child: Container(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          children: [
-                            Column(
-                              children: [
-                                Container(
-                                    padding: const EdgeInsets.all(20),
-                                    margin: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.deepPurple,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.white.withOpacity(0.5),
-                                          spreadRadius: 5,
-                                          blurRadius: 7,
-                                          offset: const Offset(0,
-                                              3), // changes position of shadow
-                                        )
-                                      ],
-                                      border: Border.all(color: Colors.grey),
-                                      borderRadius: BorderRadius.circular(72),
-                                    ),
-                                    child: const Icon(Icons.bluetooth,
-                                        size: 84, color: Colors.white)),
-                              ],
-                            ),
-                            const Text(
-                              "Tap to mark attendance",
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 20,
-                              ),
-                            )
-                          ],
-                        )),
-                  )
-                else if (flag == 1)
-                  RipplesAnimation(
-                    onPressed: () async {
-                      print("Ripple Animation");
-                      await Nearby().stopDiscovery();
-                      setState(() {
-                        flag = 0;
-                      });
-                    },
-                    child: const Text("data"),
-                  )
-                else if (flag == 2)
-                  Center(
-                    child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (flag == 0)
+                    Column(
                       children: [
-                        const CheckMarkPage(),
-                        const SizedBox(height: 10),
-                        const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text("Attendance recorded!",
-                                style: TextStyle(fontSize: 20)),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                flag = 0;
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor:
-                                  const Color.fromARGB(255, 103, 58, 183),
-                              minimumSize: const Size(100, 60),
-                              maximumSize: const Size(150, 60),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(32.0),
+                        //Select Semester
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: MediaQuery.of(context).size.height * 0.02,
+                              horizontal: MediaQuery.of(context).size.height * 0.01),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text("Choose Semester ",
+                                  style: TextStyle(fontSize: 13)),
+                              Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: DropdownButton(
+                                  value: semesterChoosen,
+                                  hint: const Text("Select an Option"),
+                                  icon: const Icon(Icons.keyboard_arrow_down),
+                                  items: semester.map((String items) {
+                                    return DropdownMenuItem(
+                                      value: items,
+                                      child: Text(items),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      semesterChoosen = newValue!;
+                                    });
+                                  },
+                                ),
                               ),
-                            ),
-                            child: const Row(
-                              children: [
-                                SizedBox(width: 8),
-                                Icon(Icons.logout,
-                                    size: 26, color: Colors.white),
-                                SizedBox(width: 10),
-                                Text("Back", style: TextStyle(fontSize: 18)),
-                              ],
-                            )),
+                            ],
+                          ),
+                        ),
+                        //Select Subject
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: MediaQuery.of(context).size.height * 0.02,
+                              horizontal: MediaQuery.of(context).size.height * 0.01),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Choose Subject', style: TextStyle(fontSize: 13)),
+                              DropdownButton(
+                                value: subjectChoosen, // Initial Value
+                                icon: const Icon(
+                                    Icons.keyboard_arrow_down), // Down Arrow Icon
+                                items: subject.map((String items) {
+                                  return DropdownMenuItem(
+                                    value: items,
+                                    child: Text(items),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    subjectChoosen = newValue!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        //Select Batch
+                        Container(
+                          margin: EdgeInsets.symmetric(
+                              vertical: MediaQuery.of(context).size.height * 0.02,
+                              horizontal: MediaQuery.of(context).size.height * 0.01),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Choose Batch', style: TextStyle(fontSize: 13)),
+                              DropdownButton(
+                                value: slotChoosen, // Initial Value
+                                icon: const Icon(
+                                    Icons.keyboard_arrow_down), // Down Arrow Icon
+                                items: slot.map((String items) {
+                                  return DropdownMenuItem(
+                                    value: items,
+                                    child: Text(items),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    slotChoosen = newValue!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: endPointFoundHandler,
+                          child: Container(
+                              padding: const EdgeInsets.all(10),
+                              child: Column(
+                                children: [
+                                  Column(
+                                    children: [
+                                      Container(
+                                          padding: const EdgeInsets.all(20),
+                                          margin: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey),
+                                            borderRadius: BorderRadius.circular(72),
+                                          ),
+                                          child: const Icon(Icons.check_circle,
+                                              size: 84)),
+                                    ],
+                                  ),
+                                  const Text(
+                                    "Tap to mark attendance",
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                    ),
+                                  )
+                                ],
+                              )),
+                        ),
                       ],
                     ),
-                  ),
-              ]))),
+                  if (flag == 1)
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          print("Ripple Animation");
+                          setState(() {
+                            flag = 0;
+                          });
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                  if (flag == 2)
+                    Center(
+                      child: Column(
+                        children: [
+                          const Icon(Icons.check_circle, size: 84, color: Colors.green),
+                          const SizedBox(height: 10),
+                          const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text("Attendance recorded!",
+                                  style: TextStyle(fontSize: 20)),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  flag = 0;
+                                });
+                              },
+                              child: const Text("Back")),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
   void endPointFoundHandler() async {
-    if (!await Nearby().askLocationPermission()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Location permissions not granted :(")));
+    if (semesterChoosen == "Select an Option" ||
+        subjectChoosen == "Select an Option" ||
+        slotChoosen == "Select an Option") {
+      showSnackbar("Please select all fields");
+      return;
     }
-
-    if (!await Nearby().enableLocationServices()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Enabling Location Service Failed :(")));
-    }
-
-    await Permission.nearbyWifiDevices.request();
-
-    Nearby().askBluetoothPermission();
-
-    while (!await Permission.bluetooth.isGranted ||
-        !await Permission.bluetoothAdvertise.isGranted ||
-        !await Permission.bluetoothConnect.isGranted ||
-        !await Permission.bluetoothScan.isGranted) {
-      [
-        Permission.bluetooth,
-        Permission.bluetoothAdvertise,
-        Permission.bluetoothConnect,
-        Permission.bluetoothScan
-      ].request();
-    }
-
-    // if (!await Nearby().checkBluetoothPermission()) {
-    //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-    //       content: Text("Bluetooth permissions not granted :(")));
-    // }
-
-    // while (!await Permission.nearbyWifiDevices.isGranted) {
-    //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-    //       content: Text("NearbyWifiDevices permissions not granted :(")));
-    // }
 
     setState(() {
       flag = 1;
     });
 
     try {
-      bool a = await Nearby().startDiscovery(
-        currEmail,
+      DateTime now = DateTime.now();
+      String formattedDate =
+          '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
+
+      // Check if attendance is started by teacher
+      var attendanceDoc = await FirebaseFirestore.instance.collection("Attendance").doc("${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}").get();
+      if (!attendanceDoc.exists || !(attendanceDoc.data()?['attendanceStarted'] ?? false)) {
+        showSnackbar("Attendance not started by teacher yet");
+        setState(() {
+          flag = 0;
+        });
+        return;
+      }
+
+      // Start discovery for Bluetooth connection
+      String serviceId = "${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+      await Nearby().startDiscovery(
+        serviceId,
         strategy,
-        onEndpointFound: (id, name, serviceId) async {
-          print("endpoint found");
-          print(name);
-          // print("Found endpoint: $id, $name, $serviceId");
-          if (name.startsWith("TCE_Faculty")) {
-            try {
-              // add if not exists, else update
-              // TCE_Facutly semester 1 oops A
-              List<String> arr = name.split(" ");
-
-              String sem = "${arr[1]} ${arr[2]}";
-              String sub = arr[3];
-              String slot = arr[4];
-
-              print("STUDENT $sem $sub $slot");
-
-              var studentDB = await FirebaseFirestore.instance
-                  .collection("Student")
-                  .doc('$sem Slot $slot');
-              var studentData = await studentDB.get();
-              // check if curr user's email is present in studentData
-              bool isStudent = false;
-              if (studentData.exists) {
-                List<dynamic> emailList = studentData['Students'];
-                print(emailList);
-                for (int i = 0; i < emailList.length; i++) {
-                  if (emailList[i]['Email'] == currEmail) {
-                    isStudent = true;
-                    break;
-                  }
-                }
-              }
-              if (isStudent) {
-                DateTime now = DateTime.now();
-                String formattedDate =
-                    '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
-
-                var db = FirebaseFirestore.instance
-                    .collection(formattedDate)
-                    .doc("$sem Slot $slot");
-                var data = await db.get();
-
-                if (!data.exists) {
-                  db.set({
-                    '$sub': FieldValue.arrayUnion([currEmail]),
-                  });
-                } else {
-                  db.update({
-                    '$sub': FieldValue.arrayUnion([currEmail]),
-                  });
-                }
-                await Nearby().stopDiscovery();
+        onEndpointFound: (id, name, serviceId) {
+          // Connect to the found endpoint
+          Nearby().requestConnection(
+            id,
+            currEmail,
+            onConnectionInitiated: (id, info) {
+              onConnectionInit(id, info);
+            },
+            onConnectionResult: (id, status) {
+              if (status == Status.CONNECTED) {
+                // Send student email as payload
+                Nearby().sendBytesPayload(id, Uint8List.fromList(currEmail.codeUnits));
                 ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Attendance recorded!! :)")));
+                    const SnackBar(content: Text("Attendance recorded via Bluetooth!! :)")));
                 setState(() {
                   flag = 2;
                 });
+              } else {
+                setState(() {
+                  flag = 0;
+                });
+                showSnackbar("Failed to connect via Bluetooth");
               }
-            } on FirebaseAuthException catch (e) {
-              print("Error $e");
-            } catch (e) {
-              showSnackbar("Error: $e");
-            }
-          }
+            },
+            onDisconnected: (id) {
+              setState(() {
+                endpointMap.remove(id);
+              });
+            },
+          );
         },
         onEndpointLost: (id) {
-          showSnackbar(
-              "Lost discovered Endpoint: ${endpointMap[id]!.endpointName}, id $id");
+          setState(() {
+            endpointMap.remove(id);
+          });
         },
       );
-      showSnackbar("DISCOVERING: $a");
+
+      // Stop discovery after a timeout or when connected
+      Future.delayed(const Duration(seconds: 30), () {
+        Nearby().stopDiscovery();
+        if (flag == 1) {
+          setState(() {
+            flag = 0;
+          });
+          showSnackbar("No teacher device found nearby");
+        }
+      });
     } catch (e) {
-      // print on console
       print("Error: $e");
       setState(() {
         flag = 0;
       });
-      showSnackbar(e);
+      showSnackbar("Error: $e");
     }
+  }
+
+  void onConnectionInit(String id, ConnectionInfo info) {
+    showModalBottomSheet(
+      context: context,
+      builder: (builder) {
+        return Center(
+          child: Column(
+            children: <Widget>[
+              Text("id: $id"),
+              Text("Token: ${info.authenticationToken}"),
+              Text("Name: ${info.endpointName}"),
+              Text("Incoming: ${info.isIncomingConnection}"),
+              ElevatedButton(
+                child: const Text("Accept Connection"),
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    endpointMap[id] = info;
+                  });
+                  Nearby().acceptConnection(
+                    id,
+                    onPayLoadRecieved: (endid, payload) async {},
+                    onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
+                  );
+                },
+              ),
+              ElevatedButton(
+                child: const Text("Reject Connection"),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  try {
+                    await Nearby().rejectConnection(id);
+                  } catch (e) {
+                    showSnackbar(e);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void showSnackbar(dynamic a) {

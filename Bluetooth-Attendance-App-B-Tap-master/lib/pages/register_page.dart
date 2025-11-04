@@ -18,6 +18,7 @@ class Register extends StatefulWidget {
 
 class _RegisterState extends State<Register> {
   String? errorMsg = '';
+  String? _selectedRole = 'Student'; // Default to Student
 
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _emailCtrl = TextEditingController();
@@ -61,13 +62,8 @@ class _RegisterState extends State<Register> {
           controller: controller,
           obscureText: title == 'Password' ? true : false,
           decoration: InputDecoration(
-            hintText: title,
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.0),
-              borderSide: BorderSide.none,
-            ),
+            labelText: title,
+            border: const OutlineInputBorder(),
           ),
         ));
   }
@@ -77,14 +73,9 @@ class _RegisterState extends State<Register> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: DropdownButtonFormField(
-        decoration: InputDecoration(
-          hintText: 'Semester',
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide.none,
-          ),
+        decoration: const InputDecoration(
+          labelText: 'Semester',
+          border: OutlineInputBorder(),
         ),
         value: _selectedSemester,
         items: _semester.map((semester) {
@@ -109,14 +100,9 @@ class _RegisterState extends State<Register> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: DropdownButtonFormField(
-        decoration: InputDecoration(
-          hintText: 'Slot',
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8.0),
-            borderSide: BorderSide.none,
-          ),
+        decoration: const InputDecoration(
+          labelText: 'Slot',
+          border: OutlineInputBorder(),
         ),
         value: _selectedSlot,
         items: _slot.map((slot) {
@@ -136,8 +122,46 @@ class _RegisterState extends State<Register> {
     );
   }
 
+  // Widget for Role Selection
+  Widget _roleSelection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          const Text('Role: '),
+          Radio<String>(
+            value: 'Student',
+            groupValue: _selectedRole,
+            onChanged: (value) {
+              setState(() {
+                _selectedRole = value;
+              });
+            },
+          ),
+          const Text('Student'),
+          Radio<String>(
+            value: 'Teacher',
+            groupValue: _selectedRole,
+            onChanged: (value) {
+              setState(() {
+                _selectedRole = value;
+              });
+            },
+          ),
+          const Text('Teacher'),
+        ],
+      ),
+    );
+  }
+
   Widget _errorMessage() {
-    return Text(errorMsg == '' ? '' : 'Humm ? $errorMsg');
+    return errorMsg == '' ? const SizedBox() : Card(
+      color: Colors.red.shade50,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(errorMsg!, style: const TextStyle(color: Colors.red)),
+      ),
+    );
   }
 
   //Widget to show snackbar with a parameter of String
@@ -163,79 +187,84 @@ class _RegisterState extends State<Register> {
 
             if (name == '' ||
                 email == '' ||
-                regno == '' ||
+                (_selectedRole == 'Student' ? regno == '' : false) ||
                 password == '' ||
                 confirmPassword == '' ||
-                _selectedSemester == null ||
-                _selectedSlot == null) {
+                (_selectedRole == 'Student' ? _selectedSemester == null : false) ||
+                (_selectedRole == 'Student' ? _selectedSlot == null : false)) {
               _showSnackBar('Please fill all the fields');
             } else if (password != confirmPassword) {
               _showSnackBar('Passwords don\'t match');
-            } else if (!email.toLowerCase().endsWith('@student.tce.edu')) {
-              // setState(() {
-              //   errorMsg = 'Not a valid Email';
-              // });
-              _showSnackBar('Not a valid Email');
+            } else if (_selectedRole == 'Student' && !email.toLowerCase().endsWith('@student.tce.edu')) {
+              _showSnackBar('Not a valid Student Email');
+            } else if (_selectedRole == 'Teacher' && (!email.toLowerCase().endsWith('@tce.edu') || email.toLowerCase().endsWith('@student.tce.edu'))) {
+              _showSnackBar('Not a valid Teacher Email');
             } else {
-              try {
-                DocumentReference<Map<String, dynamic>> db;
-                DocumentSnapshot<Map<String, dynamic>> data;
-                await FirebaseAuth.instance
-                    .createUserWithEmailAndPassword(
-                        email: email, password: password)
-                    .then((value) async => {
-                          // setState(() {
-                          //   errorMsg = "Created";
-                          // }),
-                          _showSnackBar("Created"),
-                          // print("User created to FireAuth"),
-                          db = await FirebaseFirestore.instance
-                              .collection("Student")
-                              .doc(
-                                  "Semester $_selectedSemester Slot $_selectedSlot"),
-
-                          data = await db.get(),
-
-                          if (!data.exists)
-                            {
-                              db.set({
-                                "Students": FieldValue.arrayUnion([
-                                  {
-                                    "Name": name,
-                                    "Register number": regno,
-                                    "Email": email,
-                                    // "UserID": currentUser?.uid,
-                                  }
-                                ])
-                              })
+                try {
+                  await FirebaseAuth.instance
+                      .createUserWithEmailAndPassword(
+                          email: email, password: password)
+                      .then((value) async {
+                            _showSnackBar("Created");
+                            DocumentReference<Map<String, dynamic>> db;
+                            DocumentSnapshot<Map<String, dynamic>> data;
+                            if (_selectedRole == 'Student') {
+                              db = await FirebaseFirestore.instance
+                                  .collection("Student")
+                                  .doc(
+                                      "Semester $_selectedSemester Slot $_selectedSlot");
+                              data = await db.get();
+                              if (!data.exists) {
+                                db.set({
+                                  "Students": FieldValue.arrayUnion([
+                                    {
+                                      "Name": name,
+                                      "Register number": regno,
+                                      "Email": email,
+                                    }
+                                  ])
+                                });
+                              } else {
+                                db.update({
+                                  "Students": FieldValue.arrayUnion([
+                                    {
+                                      "Name": name,
+                                      "Register number": regno,
+                                      "Email": email,
+                                    }
+                                  ])
+                                });
+                              }
+                              _showSnackBar("Added to Database");
+                              Get.offNamed('/studentHome');
+                            } else if (_selectedRole == 'Teacher') {
+                              db = await FirebaseFirestore.instance
+                                  .collection("Teacher")
+                                  .doc("Teachers");
+                              data = await db.get();
+                              if (!data.exists) {
+                                db.set({
+                                  "Teachers": FieldValue.arrayUnion([
+                                    {
+                                      "Name": name,
+                                      "Email": email,
+                                    }
+                                  ])
+                                });
+                              } else {
+                                db.update({
+                                  "Teachers": FieldValue.arrayUnion([
+                                    {
+                                      "Name": name,
+                                      "Email": email,
+                                    }
+                                  ])
+                                });
+                              }
+                              _showSnackBar("Added to Database");
+                              Get.offNamed('/staffHome');
                             }
-                          else
-                            {
-                              db.update({
-                                "Students": FieldValue.arrayUnion([
-                                  {
-                                    "Name": name,
-                                    "Register number": regno,
-                                    "Email": email,
-                                    // "UserID": currentUser?.uid,
-                                  }
-                                ])
-                              })
-                            },
-
-                          //     data.update({
-                          //   "Students": FieldValue.arrayUnion([
-                          //     {
-                          //       "Name": name,
-                          //       "Register number": regno,
-                          //       "Email": email,
-                          //       // "UserID": currentUser?.uid,
-                          //     }
-                          //   ])
-                          // }),
-                          _showSnackBar("Added to Database"),
-                          Get.offNamed('/studentHome')
-                        });
+                          });
               } on FirebaseAuthException catch (e) {
                 print(e.code);
                 String? err = e.message;
@@ -243,13 +272,7 @@ class _RegisterState extends State<Register> {
               }
             }
           },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-          ),
-          child: const Text('Register', style: TextStyle(color: Colors.white)),
+          child: const Text('Register'),
         ));
   }
 
@@ -258,50 +281,51 @@ class _RegisterState extends State<Register> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //Apply safe area to avoid the notch
-
-      backgroundColor: Colors.white,
-      body: Container(
-        height: double.infinity,
-        width: double.infinity,
+      appBar: AppBar(
+        title: const Text('Register'),
+      ),
+      body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: SingleChildScrollView(
-            child: Column(
+        child: Card(
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     'Create an account',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
+                  const SizedBox(height: 20),
+                  _roleSelection(),
                   _entryField('Name', _nameCtrl),
                   _entryField('Email', _emailCtrl),
-                  _entryField('Register Number', _regNoCtrl),
-                  _semesterDropdown(),
-                  _slotDropdown(),
+                  if (_selectedRole == 'Student') _entryField('Register Number', _regNoCtrl),
+                  if (_selectedRole == 'Student') _semesterDropdown(),
+                  if (_selectedRole == 'Student') _slotDropdown(),
                   _entryField('Password', _passwordCtrl),
                   _entryField('Confirm Password', _confirmPasswordCtrl),
                   _errorMessage(),
+                  const SizedBox(height: 20),
                   _registerBtn(),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Text('Already have an account?'),
                       TextButton(
                         onPressed: () {
                           Get.offNamed('/login');
                         },
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(color: Colors.deepPurple),
-                        ),
+                        child: const Text('Login'),
                       ),
                     ],
                   ),
-                ]),
+                ],
+              ),
+            ),
           ),
         ),
       ),

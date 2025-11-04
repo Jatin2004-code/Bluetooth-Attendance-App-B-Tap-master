@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "297638675861",
-    "project_id": "att-blue",
-    "storage_bucket": "att-blue.appspot.com"
+    "project_number": "1084925483913",
+    "project_id": "btap-attendance",
+    "storage_bucket": "btap-attendance.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:297638675861:android:607a27cad3a9984a0f629c",
+        "mobilesdk_app_id": "1:1084925483913:android:8e4662e0922aaccd7b9f58",
         "android_client_info": {
           "package_name": "com.attendance.att_blue"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "297638675861-srp1l2n8igu1ovd7p8c0t9f3e3ii2cp5.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCCb39Om8VqZ0TPoCaTbb3Lpbmcg86N4Yk"
+          "current_key": "AIzaSyBSMe86e1eWXbe5KGrzBQhAS-0P84Qlr2c"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "297638675861-srp1l2n8igu1ovd7p8c0t9f3e3ii2cp5.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
