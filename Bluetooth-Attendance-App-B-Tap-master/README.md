@@ -36,12 +36,12 @@ https://drive.google.com/file/d/1HFzRfbAdhQ4Gnc2p1IKb_vpfLU1ZV99E/view?usp=shari
 
 **Faculty:**
 
-Email: janedoe@tce.edu
+Email: sahil@tce.edu
 
-Password: jane123
+Password: Sahil123
 
 **Student:**
 
-Email: test3a1@student.tce.edu
+Email: rahul@student.tce.edu
 
-Password: test123
+Password: Rahul123
