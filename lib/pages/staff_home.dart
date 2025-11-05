@@ -8,9 +8,8 @@ import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:flutter/foundation.dart';
-import 'package:nearby_connections/nearby_connections.dart';
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:nearby_connections/nearby_connections.dart';  // Commented out for demo mode
+// import 'package:permission_handler/permission_handler.dart';  // Commented out for demo mode
 import 'student_list.dart';
 
 class StaffHomePage extends StatefulWidget {
@@ -28,8 +27,8 @@ class _StaffHomePage extends State<StaffHomePage> {
   TextEditingController dateController = TextEditingController();
 
   String userName = "";
-  final Strategy strategy = Strategy.P2P_STAR; //1 to N
-  Map<String, ConnectionInfo> endpointMap = {}; //connection details
+  // final Strategy strategy = Strategy.P2P_STAR;  // Commented out for demo mode //1 to N
+  // Map<String, ConnectionInfo> endpointMap = {};  // Commented out for demo mode //connection details
 
   String? tempFileUri; //reference to the file currently being transferred
   Map<int, String> map = {}; //store filename mapped to corresponding payloadId
@@ -63,7 +62,7 @@ class _StaffHomePage extends State<StaffHomePage> {
     "D"
   ];
 
-  bool isAdvertising = false;
+  // bool isAdvertising = false;  // Commented out for demo mode
 
   @override
   void initState() {
@@ -75,110 +74,82 @@ class _StaffHomePage extends State<StaffHomePage> {
     bool isToday =
         dateController.text == DateFormat("dd-MM-yyyy").format(DateTime.now());
     if (isToday) {
-      if (kIsWeb) {
+      // if (!isAdvertising)  // Commented out for demo mode
+      {
         return SizedBox(
           width: double.infinity,
           height: 48,
           child: ElevatedButton(
-            child: const Text('Take Attendance (Web - Firestore Only)'),
-            onPressed: () async {
-              if (semesterChoosen != "Select an Option" &&
-                  subjectChoosen != "Select an Option" &&
-                  slotChoosen != "Select an Option" &&
-                  dateController.text.isNotEmpty) {
-                try {
-                  String docId = "${dateController.text}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
-                  await FirebaseFirestore.instance.collection("Attendance").doc(docId).set({
-                    "semester": semesterChoosen,
-                    "subject": subjectChoosen,
-                    "batch": slotChoosen,
-                    "date": dateController.text,
-                    "present": [],
-                    "attendanceStarted": true
-                  });
-                  showSnackbar("Attendance started (Firestore only on web)");
-                } catch (exception) {
-                  showSnackbar("Error saving attendance: $exception");
+              child: const Text('Take Attendance'),
+              onPressed: () async {
+                if (!isToday) {
+                  return;
                 }
-              } else {
-                showSnackbar("Please select all fields");
-              }
-            },
-          ),
-        );
-      } else {
-        return !isAdvertising
-            ? SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                    child: const Text('Take Attendance'),
-                    onPressed: () async {
-                      if (!isToday) {
-                        return;
-                      }
-                      if (semesterChoosen != "Select an Option" &&
-                          subjectChoosen != "Select an Option" &&
-                          slotChoosen != "Select an Option" &&
-                          dateController.text.isNotEmpty) {
-                        try {
-                          String docId = "${dateController.text}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
-                          await FirebaseFirestore.instance.collection("Attendance").doc(docId).set({
-                            "semester": semesterChoosen,
-                            "subject": subjectChoosen,
-                            "batch": slotChoosen,
-                            "date": dateController.text,
-                            "present": [],
-                            "attendanceStarted": true
-                          });
-                          // Start advertising for Bluetooth connections
-                          String serviceId = "${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
-                          await Nearby().startAdvertising(
-                            currEmail,
-                            strategy,
-                            serviceId: serviceId,
-                            onConnectionInitiated: onConnectionInit,
-                            onConnectionResult: (id, status) {
-                              if (status == Status.CONNECTED) {
-                                showSnackbar("Student connected: $id");
-                              } else {
-                                showSnackbar("Connection failed: $id");
-                              }
-                            },
-                            onDisconnected: (id) {
-                              showSnackbar("Student disconnected: $id");
-                              setState(() {
-                                endpointMap.remove(id);
-                              });
-                            },
-                          );
-                          showSnackbar("Attendance started and advertising via Bluetooth");
-                          setState(() {
-                            isAdvertising = true;
-                          });
-                        } catch (exception) {
-                          showSnackbar("Error saving attendance: $exception");
-                        }
-                      } else {
-                        showSnackbar("Please select all fields");
-                      }
-                    }),
-              )
-            : SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                    onPressed: () async {
-                    // Stop advertising
-                    Nearby().stopAdvertising();
-                    setState(() {
-                      isAdvertising = false;
+                if (semesterChoosen != "Select an Option" &&
+                    subjectChoosen != "Select an Option" &&
+                    slotChoosen != "Select an Option" &&
+                    dateController.text.isNotEmpty) {
+                  try {
+                    String docId = "${dateController.text}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+                    await FirebaseFirestore.instance.collection("Attendance").doc(docId).set({
+                      "semester": semesterChoosen,
+                      "subject": subjectChoosen,
+                      "batch": slotChoosen,
+                      "date": dateController.text,
+                      "present": [],
+                      "attendanceStarted": true
                     });
-                    showSnackbar("Attendance stopped");
-                    },
-                    child: const Text('Stop Attendance')),
-              );
+                    // Start advertising for Bluetooth connections  // Commented out for demo mode
+                    // String serviceId = "${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+                    // await Nearby().startAdvertising(
+                    //   currEmail,
+                    //   strategy,
+                    //   serviceId: serviceId,
+                    //   onConnectionInitiated: onConnectionInit,
+                    //   onConnectionResult: (id, status) {
+                    //     if (status == Status.CONNECTED) {
+                    //       showSnackbar("Student connected: $id");
+                    //     } else {
+                    //       showSnackbar("Connection failed: $id");
+                    //     }
+                    //   },
+                    //   onDisconnected: (id) {
+                    //     showSnackbar("Student disconnected: $id");
+                    //     setState(() {
+                    //       endpointMap.remove(id);
+                    //     });
+                    //   },
+                    // );
+                    showSnackbar("Attendance started (Demo Mode)");
+                    // setState(() {  // Commented out for demo mode
+                    //   isAdvertising = true;
+                    // });
+                  } catch (exception) {
+                    showSnackbar("Error saving attendance: $exception");
+                  }
+                } else {
+                  showSnackbar("Please select all fields");
+                }
+              }),
+        );
       }
+      // else  // Commented out for demo mode
+      // {
+      //   return SizedBox(
+      //     width: double.infinity,
+      //     height: 48,
+      //     child: ElevatedButton(
+      //         onPressed: () async {
+      //         // Stop advertising
+      //         Nearby().stopAdvertising();
+      //         setState(() {
+      //           isAdvertising = false;
+      //         });
+      //         showSnackbar("Attendance stopped");
+      //         },
+      //         child: const Text('Stop Attendance')),
+      //   );
+      // }
     } else {
       return Container();
     }
@@ -381,69 +352,68 @@ class _StaffHomePage extends State<StaffHomePage> {
 
   //  Called upon Connection request (on both devices)
   // Both need to accept connection to start sending/receiving
-  void onConnectionInit(String id, ConnectionInfo info) {
-    showModalBottomSheet(
-      context: context,
-      builder: (builder) {
-        return Center(
-          child: Column(
-            children: <Widget>[
-              Text("id: $id"),
-              Text("Token: ${info.authenticationToken}"),
-              Text("Name: ${info.endpointName}"),
-              Text("Incoming: ${info.isIncomingConnection}"),
-              ElevatedButton(
-                child: const Text("Accept Connection"),
-                onPressed: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    endpointMap[id] = info;
-                  });
-                  Nearby().acceptConnection(
-                    id,
-                    onPayLoadRecieved: (endid, payload) async {
-                      if (payload.type == PayloadType.BYTES) {
-                        String studentEmail = String.fromCharCodes(payload.bytes!);
-                        // Update attendance in Firestore
-                        DateTime now = DateTime.now();
-                        String formattedDate = '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
-                        String docId = "${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
-                        await FirebaseFirestore.instance.collection("Attendance").doc(docId).update({
-                          "present": FieldValue.arrayUnion([studentEmail])
-                        });
-                        var db = FirebaseFirestore.instance.collection(formattedDate).doc("$semesterChoosen Slot $slotChoosen");
-                        var data = await db.get();
-                        if (!data.exists) {
-                          await db.set({
-                            '$subjectChoosen': FieldValue.arrayUnion([studentEmail]),
-                          });
-                        } else {
-                          await db.update({
-                            '$subjectChoosen': FieldValue.arrayUnion([studentEmail]),
-                          });
-                        }
-                        showSnackbar("Attendance recorded for $studentEmail");
-                      }
-                    },
-                    onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
-                  );
-                },
-              ),
-              ElevatedButton(
-                child: const Text("Reject Connection"),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  try {
-                    await Nearby().rejectConnection(id);
-                  } catch (e) {
-                    showSnackbar(e);
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // void onConnectionInit(String id, ConnectionInfo info) {  // Commented out for demo mode
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (builder) {
+  //       return Center(
+  //         child: Column(
+  //         children: <Widget>[
+  //           Text("id: $id"),
+  //           Text("Token: ${info.authenticationToken}"),
+  //           Text("Name: ${info.endpointName}"),
+  //           Text("Incoming: ${info.isIncomingConnection}"),
+  //           ElevatedButton(
+  //             child: const Text("Accept Connection"),
+  //             onPressed: () {
+  //               Navigator.pop(context);
+  //               setState(() {
+  //                 endpointMap[id] = info;
+  //               });
+  //               Nearby().acceptConnection(
+  //                 id,
+  //                 onPayLoadRecieved: (endid, payload) async {
+  //                   if (payload.type == PayloadType.BYTES) {
+  //                     String studentEmail = String.fromCharCodes(payload.bytes!);
+  //                     // Update attendance in Firestore
+  //                     DateTime now = DateTime.now();
+  //                     String formattedDate = '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
+  //                     String docId = "${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
+  //                     await FirebaseFirestore.instance.collection("Attendance").doc(docId).update({
+  //                       "present": FieldValue.arrayUnion([studentEmail])
+  //                     });
+  //                     var db = FirebaseFirestore.instance.collection(formattedDate).doc("$semesterChoosen Slot $slotChoosen");
+  //                     var data = await db.get();
+  //                     if (!data.exists) {
+  //                       await db.set({
+  //                         '$subjectChoosen': FieldValue.arrayUnion([studentEmail]),
+  //                       });
+  //                     } else {
+  //                       await db.update({
+  //                         '$subjectChoosen': FieldValue.arrayUnion([studentEmail]),
+  //                       });
+  //                     }
+  //                     showSnackbar("Attendance recorded for $studentEmail");
+  //                   }
+  //                 },
+  //                 onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
+  //               );
+  //             },
+  //           ),
+  //           ElevatedButton(
+  //             child: const Text("Reject Connection"),
+  //             onPressed: () async {
+  //               Navigator.pop(context);
+  //               try {
+  //                 await Nearby().rejectConnection(id);
+  //               } catch (e) {
+  //                 showSnackbar(e);
+  //               }
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 }

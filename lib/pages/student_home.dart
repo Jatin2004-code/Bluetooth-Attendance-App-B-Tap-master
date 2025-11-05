@@ -1,13 +1,12 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
-import 'dart:typed_data';
+// import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:nearby_connections/nearby_connections.dart';
-import 'package:permission_handler/permission_handler.dart';
+// import 'package:nearby_connections/nearby_connections.dart';  // Commented out for demo mode
+// import 'package:permission_handler/permission_handler.dart';  // Commented out for demo mode
 
 class StudentHomePage extends StatefulWidget {
   const StudentHomePage({super.key});
@@ -25,8 +24,8 @@ class _StudentHomePageState extends State<StudentHomePage> {
   String subjectChoosen = "Select an Option";
   String slotChoosen = "Select an Option";
 
-  final Strategy strategy = Strategy.P2P_STAR;
-  Map<String, ConnectionInfo> endpointMap = {};
+  // final Strategy strategy = Strategy.P2P_STAR;  // Commented out for demo mode
+  // Map<String, ConnectionInfo> endpointMap = {};  // Commented out for demo mode
 
   // List of items in our dropdown menu
   var semester = [
@@ -56,20 +55,18 @@ class _StudentHomePageState extends State<StudentHomePage> {
   @override
   void initState() {
     super.initState();
-    _requestPermissions();
+    // _requestPermissions();  // Commented out for demo mode
   }
 
-  void _requestPermissions() async {
-    if (!kIsWeb) {
-      await [
-        Permission.location,
-        Permission.bluetooth,
-        Permission.bluetoothScan,
-        Permission.bluetoothConnect,
-        Permission.bluetoothAdvertise,
-      ].request();
-    }
-  }
+  // void _requestPermissions() async {  // Commented out for demo mode
+  //   await [
+  //     Permission.location,
+  //     Permission.bluetooth,
+  //     Permission.bluetoothScan,
+  //     Permission.bluetoothConnect,
+  //     Permission.bluetoothAdvertise,
+  //   ].request();
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -197,45 +194,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                         ),
                         const SizedBox(height: 20),
                         GestureDetector(
-                          onTap: kIsWeb ? () async {
-                            if (semesterChoosen == "Select an Option" ||
-                                subjectChoosen == "Select an Option" ||
-                                slotChoosen == "Select an Option") {
-                              showSnackbar("Please select all fields");
-                              return;
-                            }
-
-                            DateTime now = DateTime.now();
-                            String formattedDate =
-                                '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}';
-
-                            // Check if attendance is started by teacher
-                            var attendanceDoc = await FirebaseFirestore.instance.collection("Attendance").doc("${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}").get();
-                            if (!attendanceDoc.exists || !(attendanceDoc.data()?['attendanceStarted'] ?? false)) {
-                              showSnackbar("Attendance not started by teacher yet");
-                              return;
-                            }
-
-                            // Simulate attendance recording for web
-                            await FirebaseFirestore.instance.collection("Attendance").doc("${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}").update({
-                              "present": FieldValue.arrayUnion([currEmail])
-                            });
-                            var db = FirebaseFirestore.instance.collection(formattedDate).doc("$semesterChoosen Slot $slotChoosen");
-                            var data = await db.get();
-                            if (!data.exists) {
-                              await db.set({
-                                '$subjectChoosen': FieldValue.arrayUnion([currEmail]),
-                              });
-                            } else {
-                              await db.update({
-                                '$subjectChoosen': FieldValue.arrayUnion([currEmail]),
-                              });
-                            }
-                            setState(() {
-                              flag = 2;
-                            });
-                            showSnackbar("Attendance recorded via Firestore!");
-                          } : endPointFoundHandler,
+                          onTap: endPointFoundHandler,
                           child: Container(
                               padding: const EdgeInsets.all(10),
                               child: Column(
@@ -249,13 +208,13 @@ class _StudentHomePageState extends State<StudentHomePage> {
                                             border: Border.all(color: Colors.grey),
                                             borderRadius: BorderRadius.circular(72),
                                           ),
-                                          child: Icon(kIsWeb ? Icons.cloud : Icons.check_circle,
+                                          child: const Icon(Icons.check_circle,
                                               size: 84)),
                                     ],
                                   ),
-                                  Text(
-                                    kIsWeb ? "Tap to mark attendance (Web)" : "Tap to mark attendance",
-                                    style: const TextStyle(
+                                  const Text(
+                                    "Tap to mark attendance",
+                                    style: TextStyle(
                                       fontSize: 20,
                                     ),
                                   )
@@ -337,58 +296,28 @@ class _StudentHomePageState extends State<StudentHomePage> {
         return;
       }
 
-      // Start discovery for Bluetooth connection
-      String serviceId = "${semesterChoosen}_${subjectChoosen}_${slotChoosen}";
-      await Nearby().startDiscovery(
-        serviceId,
-        strategy,
-        onEndpointFound: (id, name, serviceId) {
-          // Connect to the found endpoint
-          Nearby().requestConnection(
-            id,
-            currEmail,
-            onConnectionInitiated: (id, info) {
-              onConnectionInit(id, info);
-            },
-            onConnectionResult: (id, status) {
-              if (status == Status.CONNECTED) {
-                // Send student email as payload
-                Nearby().sendBytesPayload(id, Uint8List.fromList(currEmail.codeUnits));
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Attendance recorded via Bluetooth!! :)")));
-                setState(() {
-                  flag = 2;
-                });
-              } else {
-                setState(() {
-                  flag = 0;
-                });
-                showSnackbar("Failed to connect via Bluetooth");
-              }
-            },
-            onDisconnected: (id) {
-              setState(() {
-                endpointMap.remove(id);
-              });
-            },
-          );
-        },
-        onEndpointLost: (id) {
-          setState(() {
-            endpointMap.remove(id);
-          });
-        },
-      );
+      // Directly update Firestore with student's email for demo mode
+      await FirebaseFirestore.instance.collection("Attendance").doc("${formattedDate}_${semesterChoosen}_${subjectChoosen}_${slotChoosen}").update({
+        "present": FieldValue.arrayUnion([currEmail])
+      });
 
-      // Stop discovery after a timeout or when connected
-      Future.delayed(const Duration(seconds: 30), () {
-        Nearby().stopDiscovery();
-        if (flag == 1) {
-          setState(() {
-            flag = 0;
-          });
-          showSnackbar("No teacher device found nearby");
-        }
+      // Also update the old collection structure for compatibility
+      var db = FirebaseFirestore.instance.collection(formattedDate).doc("$semesterChoosen Slot $slotChoosen");
+      var data = await db.get();
+      if (!data.exists) {
+        await db.set({
+          '$subjectChoosen': FieldValue.arrayUnion([currEmail]),
+        });
+      } else {
+        await db.update({
+          '$subjectChoosen': FieldValue.arrayUnion([currEmail]),
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Attendance saved in Firestore (Demo Mode)")));
+      setState(() {
+        flag = 2;
       });
     } catch (e) {
       print("Error: $e");
@@ -399,48 +328,47 @@ class _StudentHomePageState extends State<StudentHomePage> {
     }
   }
 
-  void onConnectionInit(String id, ConnectionInfo info) {
-    showModalBottomSheet(
-      context: context,
-      builder: (builder) {
-        return Center(
-          child: Column(
-            children: <Widget>[
-              Text("id: $id"),
-              Text("Token: ${info.authenticationToken}"),
-              Text("Name: ${info.endpointName}"),
-              Text("Incoming: ${info.isIncomingConnection}"),
-              ElevatedButton(
-                child: const Text("Accept Connection"),
-                onPressed: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    endpointMap[id] = info;
-                  });
-                  Nearby().acceptConnection(
-                    id,
-                    onPayLoadRecieved: (endid, payload) async {},
-                    onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
-                  );
-                },
-              ),
-              ElevatedButton(
-                child: const Text("Reject Connection"),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  try {
-                    await Nearby().rejectConnection(id);
-                  } catch (e) {
-                    showSnackbar(e);
-                  }
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // void onConnectionInit(String id, ConnectionInfo info) {  // Commented out for demo mode
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (builder) {
+  //       return Center(
+  //         child: Column(
+  //         children: <Widget>[
+  //           Text("id: $id"),
+  //           Text("Token: ${info.authenticationToken}"),
+  //           Text("Name: ${info.endpointName}"),
+  //           Text("Incoming: ${info.isIncomingConnection}"),
+  //           ElevatedButton(
+  //             child: const Text("Accept Connection"),
+  //             onPressed: () {
+  //               Navigator.pop(context);
+  //               setState(() {
+  //                 endpointMap[id] = info;
+  //               });
+  //               Nearby().acceptConnection(
+  //                 id,
+  //                 onPayLoadRecieved: (endid, payload) async {},
+  //                 onPayloadTransferUpdate: (endid, payloadTransferUpdate) {},
+  //               );
+  //             },
+  //           ),
+  //           ElevatedButton(
+  //             child: const Text("Reject Connection"),
+  //             onPressed: () async {
+  //               Navigator.pop(context);
+  //               try {
+  //                 await Nearby().rejectConnection(id);
+  //               } catch (e) {
+  //                 showSnackbar(e);
+  //               }
+  //             },
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   void showSnackbar(dynamic a) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(

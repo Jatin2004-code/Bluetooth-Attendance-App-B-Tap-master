@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../auth.dart';
-import 'package:att_blue/pages/staff_home.dart';
+import 'staff_home.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});

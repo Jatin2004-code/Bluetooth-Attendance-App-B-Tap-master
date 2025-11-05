@@ -2,10 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/animation.dart';
-import 'package:att_blue/components/rippleEffect/circle_painter.dart';
-import 'package:att_blue/components/rippleEffect/curve_wave.dart';
-
 import 'circle_painter.dart';
+import 'curve_wave.dart';
 
 class RipplesAnimation extends StatefulWidget {
   const RipplesAnimation({

@@ -1,9 +1,9 @@
 // ignore_for_file: unused_import
-import 'package:att_blue/pages/student_list.dart';
-import 'package:att_blue/pages/login_page.dart';
-import 'package:att_blue/pages/staff_home.dart';
-import 'package:att_blue/pages/student_home.dart';
-import 'package:att_blue/pages/register_page.dart';
+import 'pages/student_list.dart';
+import 'pages/login_page.dart';
+import 'pages/staff_home.dart';
+import 'pages/student_home.dart';
+import 'pages/register_page.dart';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
